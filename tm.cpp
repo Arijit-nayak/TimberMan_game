@@ -84,7 +84,7 @@ void updateBranch(Sprite *spriteBranch, int &chopHeight, int &maxBranch)
 
 int main()
 {
-    VideoMode vm(800, 600);
+    VideoMode vm(1920, 1080);
     RenderWindow window(vm, "Timber Man !!!!");
 
     View view(FloatRect(0, 0, 1920, 1020));
