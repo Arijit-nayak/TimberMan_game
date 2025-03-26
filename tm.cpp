@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <cmath>
 #include <sstream>
+#include<iostream>
+using namespace std;
 using namespace sf;
 
 void updateCloudSprite(Sprite &spriteCloud, Time &dt, float &pixelPerSecondCloud)
@@ -40,13 +42,13 @@ void updateBeeSprite(Sprite &spriteBee, Time &dt, float &pixelPerSecondBee)
         spriteBee.setPosition(x, y);
     }
 }
-void upadteTimeBar(RectangleShape &timeBar, float &timeOutTime, Time &dt, float &timeBarPixelPerSec, bool &timeOut, float &timeBarHeight)
+void upadteTimeBar(RectangleShape &timeBar, float &timeOutTime, Time &dt, float &timeBarPixelPerSec, bool &timeOut, float &timeBarHeight, bool &gameOver)
 {
     timeOutTime = timeOutTime - dt.asSeconds();
     float newTimeBarWidth = timeBarPixelPerSec * timeOutTime;
-    if (newTimeBarWidth <= 0)
+    if (newTimeBarWidth <= 0 )
         timeOut = true;
-    if (!timeOut)
+    if (!timeOut & !gameOver)
         timeBar.setSize(Vector2f(newTimeBarWidth, timeBarHeight));
 }
 
@@ -101,7 +103,7 @@ int main()
     Texture textureCloud;
     textureCloud.loadFromFile("cloud.png");
     spriteCloud.setTexture(textureCloud);
-    spriteCloud.setPosition(0, 100);
+    spriteCloud.setPosition(-150, 100);
     spriteCloud.setScale(0.8, 0.8);
     // bool moveCloud = false;
     float clodSpeed = 15;
@@ -109,13 +111,13 @@ int main()
 
     Sprite spriteCloud1;
     spriteCloud1.setTexture(textureCloud);
-    spriteCloud1.setPosition(0, 150);
+    spriteCloud1.setPosition(-150, 150);
     float cloud1Speed = 10;
     float pixelPerSecondCloud1 = 1920 / cloud1Speed;
 
     Sprite spriteCloud2;
     spriteCloud2.setTexture(textureCloud);
-    spriteCloud2.setPosition(0, 20);
+    spriteCloud2.setPosition(-150, 20);
     spriteCloud2.setScale(0.5, 0.5);
     float cloud2Speed = 25;
     float pixelPerSecondCloud2 = 1920 / cloud2Speed;
@@ -167,7 +169,7 @@ int main()
     timeBar.setOrigin(400 / 2, 80 / 2);
     timeBar.setPosition(1920 / 2, 880);
 
-    float timeOutTime = 6;
+    float timeOutTime = 3;
     float timeBarPixelPerSec = timeBarWidth / timeOutTime;
 
     int maxBranch = 6;
@@ -194,6 +196,34 @@ int main()
 
     bool gameOver = false;
 
+
+    Sprite spriteLog;
+    Texture textureLog;
+    textureLog.loadFromFile("log.png");
+    spriteLog.setTexture(textureLog);
+    spriteLog.setPosition(810, 780);
+
+    float logSpeedX = 0.2;
+    float logPixelPerSecondX = 990/logSpeedX;
+    float logSpeedY =0.2;
+    float logPixelPerSecondY = -400/logSpeedY;
+    bool logActive = false;
+    float logPixelPerX ;
+
+    Sprite spriteAxe;
+    Texture textureAxe;
+    textureAxe.loadFromFile("axe.png");
+    spriteAxe.setTexture(textureAxe);
+    spriteAxe.setPosition(3000, 800);
+    float rightAxePos = 1010;
+    float leftAxePos = 730;
+
+    Sprite spriteRip;
+    Texture textureRip;
+    textureRip.loadFromFile("rip.png");
+    spriteRip.setTexture(textureRip);
+    spriteRip.setPosition(3000, 750);
+
     // sstream ss;
 
     Clock ct;
@@ -210,21 +240,22 @@ int main()
             }
             if (event.type == Event::KeyReleased && acceptInput == false)
             {
+                spriteAxe.setPosition(3000,800);
                 acceptInput = true;
             }
         }
 
         dt = ct.restart();
-        if (!paused)
+        if (!paused || logActive)
         {
             updateCloudSprite(spriteCloud, dt, pixelPerSecondCloud);
             updateCloudSprite(spriteCloud1, dt, pixelPerSecondCloud1);
             updateCloudSprite(spriteCloud2, dt, pixelPerSecondCloud2);
             updateBeeSprite(spriteBee, dt, pixelPerSecondBee);
-            upadteTimeBar(timeBar, timeOutTime, dt, timeBarPixelPerSec, timeOut, timeBarHeight);
+            upadteTimeBar(timeBar, timeOutTime, dt, timeBarPixelPerSec, timeOut, timeBarHeight, gameOver);
         }
 
-        if (timeOut)
+        if (timeOut  && !gameOver)
         {
             paused = true;
             messageText.setString("Time Out !!!!");
@@ -238,50 +269,68 @@ int main()
         {
             if (Keyboard::isKeyPressed(Keyboard::Return))
             {
-                paused = !paused;
-                if (paused == true)
-                    messageText.setString("Game paused !!!");
-                else
-                    messageText.setString("");
                 if (timeOut)
                 {
-                    timeOutTime = 6;
+                    timeOutTime = 3;
                     timeOut = false;
+                    gameOver = true;
                     score_val = 0;
                 }
+                //cout << gameOver << endl;
                 if (gameOver)
                 {
-                    timeOutTime = 6;
+                    timeOutTime = 3;
                     timeOut = false;
                     score_val = 0;
-                    gameOver = false;
-                    paused = false;
+                    messageText.setString("");
                     for (int i = 0; i < maxBranch; i++)
                     {
                         spriteBranch[i].setPosition(3000, -260);
                     }
+                    sprritePlayer.setPosition(1310, sprritePlayer.getPosition().y);
+                    spriteRip.setPosition(3000, spriteRip.getPosition().y);
+                    gameOver = false;
+                    paused = false;
+                }
+                else
+                {
+                        paused = !paused;
+                        if (paused == true && logActive == false && !gameOver)
+                            messageText.setString("Game paused !!!");
+                        else
+                            messageText.setString("");
                 }
                 acceptInput = false;
             }
             if (Keyboard::isKeyPressed(Keyboard::Left) && !paused && !gameOver)
             {
                 score_val++;
-                timeOutTime = 6;
+                timeOutTime = 3;
 
                 updateBranch(spriteBranch, chopHeight, maxBranch);
                 float y = sprritePlayer.getPosition().y;
                 sprritePlayer.setPosition(810 - bounds.width / 2.0f - 10, y);
                 sprritePlayer.setScale(-1.0f, 1.0f);
+
+                spriteAxe.setPosition(leftAxePos, 800);
+
+                logPixelPerX = logPixelPerSecondX;
+                logActive = true;
+                paused =true;
                 acceptInput = false;
             }
             if (Keyboard::isKeyPressed(Keyboard::Right) && !paused && !gameOver)
             {
                 score_val++;
-                timeOutTime = 6;
+                timeOutTime = 3;
                 updateBranch(spriteBranch, chopHeight, maxBranch);
                 float y = sprritePlayer.getPosition().y;
                 sprritePlayer.setPosition(810 + 300 + bounds.width / 2.0f + 10, y);
                 sprritePlayer.setScale(1.0f, 1.0f);
+                spriteAxe.setPosition(rightAxePos, 800);
+                logPixelPerX = -logPixelPerSecondX;
+                logActive = true;
+                paused=true;
                 acceptInput = false;
             }
         }
@@ -290,8 +339,12 @@ int main()
         if (playerBound.intersects(branchBound))
         {
             timeBar.setSize(Vector2f(0, 0));
+            timeOutTime = 0;
+            spriteRip.setPosition(sprritePlayer.getPosition().x, spriteRip.getPosition().y);
+            sprritePlayer.setPosition(3000, sprritePlayer.getPosition().y);
             messageText.setString("Game OVER !!!!!!");
             paused = true;
+            logActive = false;
             gameOver = true;
         }
 
@@ -303,6 +356,25 @@ int main()
         float mid_x = bounds.left + bounds.width / 2.0f;
         float mid_y = bounds.top + bounds.height / 2.0f;
         messageText.setOrigin(mid_x, mid_y);
+
+        if(logActive)
+        {
+            float x = spriteLog.getPosition().x;
+            float y = spriteLog.getPosition().y ;
+
+            x = x+ logPixelPerX * dt.asSeconds();
+            y = y+ logPixelPerSecondY * dt.asSeconds();
+
+            if(x<0 || x>1980)
+            {
+                x=810;
+                y=780;
+                paused = false;
+                logActive=false;
+            }
+
+            spriteLog.setPosition(x,y);
+        }
 
         window.clear();
 
@@ -316,6 +388,10 @@ int main()
             window.draw(spriteBranch[i]);
 
         window.draw(sprritePlayer);
+        
+        window.draw(spriteLog);
+        window.draw(spriteAxe);
+        window.draw(spriteRip);
 
         window.draw(spriteBee);
 
